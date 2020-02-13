@@ -135,3 +135,13 @@ To launch (and enable the feature if disabled) execute `rio dashboard`.
 
 The dashboard is in active development, and undergoing quite a bit of refinement. Some features are not yet 100% implemented, so use with caution. 
 
+### Linkerd
+
+Linkerd has a dashboard that can be viewed. To open, execute `rio linkerd`. 
+This will proxy the dashboard to your local workstatin, and open `127.0.0.1:9999` for viewing.
+
+### External Services
+
+Rio has the capability to register external services into the Linkerd service mesh.
+
+To configure, execute `rio externalservice`.

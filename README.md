@@ -72,7 +72,7 @@ At this point, you should have Rio installed into your Kubernetes cluster.
 
 To demonstrate along with the slide deck, do the following steps:
 
-1. Execute `rio run -p 80:8080 --scale 1-10 https://github.com/ebauman/rio-demo-code`
+1. Execute `rio run -p 80:8080 --name rio-demo --scale 1-10 https://github.com/ebauman/rio-demo-code`
 
     Speak to the following points:
     1. Rio run is how you start *Services*
@@ -88,3 +88,50 @@ To demonstrate along with the slide deck, do the following steps:
     3. That container image is then put into a Kubernetes Deployment
 
 3. Once built, grab the generated endpoint (`rio ps`) and open the URL
+    
+    Speak to the following points:
+    1. Rio domain was auto-generated (`xxxx.on-rio.io`)
+    2. This service has a service-specific domain (`rio-demo-v0.xxxx.on-rio.io`)
+    3. Rio auto-secured using Let's Encrypt wildcard certificate (valid for `xxxx.on-rio.io`)
+
+4. Demonstrate auto-scaling:
+   1. Execute `rio inspect rio-demo` to grab the HTTP endpoint (*not* https) for the service.
+   2. Execute `hey -c 60 -z 3m http://rio-demo-v0.xxxx.on-rio.io:12345` to send 60 concurrent requests for 3 minutes to the service
+   3. Execute `watch rio ps` and observe the Rio service auto-scale after a period of time, up to 10 replicas.
+   4. Stop `hey` (ctrl-c) and observe after a period of time, the scale falls back to 1
+
+    Speak to the following points:
+    1. `hey` is only capable of handling `http` traffic, so we needed to find that endpoint. There is more info available using `rio inspect` (out of scope of this demo)
+    2. Rio is capable of scaling to 0
+    3. Scaling is performed based on QPS, which is subject to the perf characteristics of the app being scaled. (e.g. if app responds quickly, QPS may not reach 60)
+    4. QPS is based on metrics exported from linkerd sidecar. Autoscaling is done via lightweight autoscaler that is part of Rio.
+
+5. Demonstrate staging:
+   1. Execute `rio stage --image ebauman/rio-demo:v2 rio-demo v2`
+        
+        We are staging a new version of a service, and giving it v2 as the version tag. 
+
+   2. Execute `rio ps` and note that there is a new version staged.
+
+   3. Execute `rio endpoints` and note the single endpoint that is pointing to `v0` of the application
+
+        This is a good place to talk about how *Apps* differ from *Services*. Explain how Apps are collections of Services, and traffic is distributed according to the Weight column available when executing `rio ps`
+   4. Open the App endpoint in the browser. Note how this is currently showing the output of app version v0.  
+   5. Execute `rio promote rio-demo@v2` and note how traffic shifts (`rio ps`)
+
+        After `rio promote` has been executed, you can follow it up with `rio ps`. This will show the Weight column as having shifted traffic 100% to your new v2 service.
+   6. Refresh the App endpoint you opened in step #4, and how the output is now showing v2. 
+
+6. Demonstrate routing
+   1. Execute `rio route add rio-demo/old to rio-demo@v0`
+   2. Execute `rio route list` to show the list of routes. Demonstrate opening the /old URL and how traffic is diverted to the old deployment. 
+
+
+## Other Topics
+
+### Rio Dashboard
+
+To launch (and enable the feature if disabled) execute `rio dashboard`. 
+
+The dashboard is in active development, and undergoing quite a bit of refinement. Some features are not yet 100% implemented, so use with caution. 
+
